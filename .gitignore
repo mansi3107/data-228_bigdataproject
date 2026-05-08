@@ -1,0 +1,11 @@
+airflow/logs/
+airflow-docker/logs/
+airflow/airflow.cfg
+airflow/webserver_config.py
+airflow/airflow-webserver.pid
+airflow-docker/.env
+ml_ready_local/
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+.DS_Store

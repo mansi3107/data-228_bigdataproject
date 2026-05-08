@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US Accidents — Live Prediction Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d0d0f;--bg2:#141417;--bg3:#1c1c21;--border:#2a2a32;--text:#f0f0f0;--text2:#888;--text3:#555;--accent:#e85a2a;--accent2:#378ADD;--accent3:#1D9E75;--accent4:#EF9F27}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:24px}
+.header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;border-bottom:1px solid var(--border);padding-bottom:20px}
+.header h1{font-size:26px;font-weight:600;letter-spacing:-0.5px}
+.header p{font-size:13px;color:var(--text2);margin-top:4px;font-family:'DM Mono',monospace}
+.badge{background:var(--accent);color:#fff;font-size:11px;padding:4px 10px;border-radius:4px;font-family:'DM Mono',monospace;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.6}}
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:24px}
+.section-title{font-size:14px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--accent3);animation:blink 1.5s infinite}
+.input-group{margin-bottom:14px}
+.input-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.input-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:12px;font-family:'DM Mono',monospace;outline:none;transition:border-color 0.2s}
+select:focus,input[type=number]:focus{border-color:var(--accent2)}
+.toggle-row{display:flex;gap:8px;flex-wrap:wrap}
+.toggle-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace;transition:all 0.2s}
+.toggle-btn.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.predict-btn{width:100%;background:var(--accent);border:none;color:#fff;padding:14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:16px;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+.predict-btn:hover{background:#d04d22;transform:translateY(-1px)}
+.predict-btn:disabled{background:#555;cursor:not-allowed;transform:none}
+.result-block{background:var(--bg3);border-radius:12px;padding:18px;margin-bottom:12px;border:1px solid var(--border);transition:all 0.4s}
+.result-block.active{border-color:var(--accent2);background:rgba(55,138,221,0.06)}
+.result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.result-model{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px}
+.result-algo{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+.result-value{font-size:32px;font-weight:600;text-align:right;transition:all 0.3s}
+.result-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-align:right;margin-top:2px}
+.severity-bar{display:flex;gap:4px;margin-top:10px}
+.sev-segment{flex:1;height:8px;border-radius:4px;background:var(--border);transition:all 0.4s}
+.result-detail{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.confidence-bar{height:6px;background:var(--border);border-radius:3px;margin-top:6px;overflow:hidden}
+.confidence-fill{height:100%;border-radius:3px;transition:width 0.6s ease;width:0}
+.waiting{color:var(--text3);font-size:13px;text-align:center;padding:60px 0;font-family:'DM Mono',monospace}
+.waiting span{display:block;font-size:28px;margin-bottom:10px}
+.history-table{width:100%;border-collapse:collapse;font-size:12px}
+.history-table th{text-align:left;padding:8px 12px;color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)}
+.history-table td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:'DM Mono',monospace;color:var(--text2)}
+.sev-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.sev-1{background:rgba(29,158,117,0.2);color:#1D9E75}
+.sev-2{background:rgba(239,159,39,0.2);color:#EF9F27}
+.sev-3{background:rgba(232,90,42,0.2);color:#e85a2a}
+.sev-4{background:rgba(163,45,45,0.2);color:#a32d2d}
+.rush-yes{background:rgba(232,90,42,0.2);color:#e85a2a}
+.rush-no{background:rgba(29,158,117,0.2);color:#1D9E75}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>US Accidents — Live Prediction Demo</h1>
+    <p>Spark MLlib · 7.49M training records · Random Forest + Linear Regression + Logistic Regression</p>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span class="badge">● LIVE</span>
+    <span style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace">localhost:5000</span>
+  </div>
+</div>
+
+<div class="main-grid">
+  <!-- INPUT -->
+  <div class="card">
+    <div class="section-title"><div class="live-dot"></div>Input Accident Conditions</div>
+
+    <div class="input-group">
+      <span class="input-label">Location</span>
+      <div class="input-row">
+        <select id="state" onchange="updateCities()">
+          <option value="CA">California (CA)</option>
+          <option value="FL">Florida (FL)</option>
+          <option value="TX">Texas (TX)</option>
+          <option value="NY">New York (NY)</option>
+          <option value="NC">North Carolina (NC)</option>
+          <option value="PA">Pennsylvania (PA)</option>
+          <option value="VA">Virginia (VA)</option>
+          <option value="MN">Minnesota (MN)</option>
+          <option value="GA">Georgia (GA)</option>
+          <option value="IL">Illinois (IL)</option>
+          <option value="OH">Ohio (OH)</option>
+          <option value="SC">South Carolina (SC)</option>
+        </select>
+        <select id="city"></select>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <span class="input-label">Date & Time</span>
+      <div class="input-row-3">
+        <select id="hour">
+          <option value="0">12:00 AM</option><option value="1">1:00 AM</option>
+          <option value="2">2:00 AM</option><option value="3">3:00 AM</option>
+          <option value="4">4:00 AM</option><option value="5">5:00 AM</option>
+          <option value="6">6:00 AM</option><option value="7" selected>7:00 AM</option>
+          <option value="8">8:00 AM</option><option value="9">9:00 AM</option>
+          <option value="10">10:00 AM</option><option value="11">11:00 AM</option>
+          <option value="12">12:00 PM</option><option value="13">1:00 PM</option>
+          <option value="14">2:00 PM</option><option value="15">3:00 PM</option>
+          <option value="16">4:00 PM</option><option value="17">5:00 PM</option>
+          <option value="18">6:00 PM</option><option value="19">7:00 PM</option>
+          <option value="20">8:00 PM</option><option value="21">9:00 PM</option>
+          <option value="22">10:00 PM</option><option value="23">11:00 PM</option>
+        </select>
+        <select id="dow">
+          <option value="1">Sunday</option><option value="2">Monday</option>
+          <option value="3">Tuesday</option><option value="4">Wednesday</option>
+          <option value="5">Thursday</option><option value="6" selected>Friday</option>
+          <option value="7">Saturday</option>
+        </select>
+        <select id="month">
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12" selected>December</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <span class="input-label">Weather</span>
+      <div class="input-row">
+        <select id="weather">
+          <option value="Fair">Fair</option>
+          <option value="Mostly Cloudy">Mostly Cloudy</option>
+          <option value="Cloudy">Cloudy</option>
+          <option value="Light Rain" selected>Light Rain</option>
+          <option value="Heavy Rain">Heavy Rain</option>
+          <option value="Overcast">Overcast</option>
+          <option value="Light Snow">Light Snow</option>
+          <option value="Heavy Snow">Heavy Snow</option>
+          <option value="Fog">Fog</option>
+          <option value="Haze">Haze</option>
+          <option value="Thunderstorm">Thunderstorm</option>
+          <option value="Clear">Clear</option>
+        </select>
+        <select id="sunrise">
+          <option value="Day">Day</option>
+          <option value="Night">Night</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <span class="input-label">Weather Measurements</span>
+      <div class="input-row-3">
+        <input type="number" id="temp" value="65" placeholder="Temp °F">
+        <input type="number" id="humidity" value="70" placeholder="Humidity %">
+        <input type="number" id="visibility" value="10" placeholder="Visibility mi">
+      </div>
+      <div class="input-row" style="margin-top:10px">
+        <input type="number" id="wind_speed" value="8" placeholder="Wind Speed mph">
+        <input type="number" id="pressure" value="29.9" placeholder="Pressure in" step="0.1">
+      </div>
+    </div>
+
+    <div class="input-group">
+      <span class="input-label">Road Features</span>
+      <div class="toggle-row">
+        <button class="toggle-btn" id="btn-junction" onclick="toggle('junction',this)">Junction</button>
+        <button class="toggle-btn" id="btn-crossing" onclick="toggle('crossing',this)">Crossing</button>
+        <button class="toggle-btn on" id="btn-traffic_signal" onclick="toggle('traffic_signal',this)">Traffic Signal</button>
+        <button class="toggle-btn" id="btn-stop" onclick="toggle('stop',this)">Stop Sign</button>
+        <button class="toggle-btn" id="btn-amenity" onclick="toggle('amenity',this)">Amenity</button>
+        <button class="toggle-btn" id="btn-roundabout" onclick="toggle('roundabout',this)">Roundabout</button>
+        <button class="toggle-btn" id="btn-bump" onclick="toggle('bump',this)">Speed Bump</button>
+        <button class="toggle-btn" id="btn-railway" onclick="toggle('railway',this)">Railway</button>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <span class="input-label">Distance (mi)</span>
+      <input type="number" id="distance" value="0.5" placeholder="Distance mi" step="0.1">
+    </div>
+
+    <button class="predict-btn" id="predict-btn" onclick="predict()">⚡ Run All 3 Predictions</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="card">
+    <div class="section-title"><div class="live-dot"></div>Prediction Results</div>
+
+    <div id="waiting" class="waiting">
+      <span>🎯</span>
+      Fill in the conditions<br>and click Predict
+    </div>
+
+    <div id="results" style="display:none">
+      <div class="result-block" id="block1">
+        <div class="result-header">
+          <div>
+            <div class="result-model">Model 1 — Severity Prediction</div>
+            <div class="result-algo">Random Forest · 30 trees · depth 8 · 80.17% accuracy</div>
+          </div>
+          <div>
+            <div class="result-value" id="sev-val">—</div>
+            <div class="result-label" id="sev-lbl">Severity Level</div>
+          </div>
+        </div>
+        <div class="severity-bar">
+          <div class="sev-segment" id="seg1"></div>
+          <div class="sev-segment" id="seg2"></div>
+          <div class="sev-segment" id="seg3"></div>
+          <div class="sev-segment" id="seg4"></div>
+        </div>
+        <div class="result-detail" id="sev-detail">—</div>
+        <div class="confidence-bar"><div class="confidence-fill" id="sev-conf"></div></div>
+      </div>
+
+      <div class="result-block" id="block2">
+        <div class="result-header">
+          <div>
+            <div class="result-model">Model 2 — Duration Prediction</div>
+            <div class="result-algo">Linear Regression · RMSE 121.23 mins · R2 0.0379</div>
+          </div>
+          <div>
+            <div class="result-value" id="dur-val" style="color:#378ADD">—</div>
+            <div class="result-label">Minutes</div>
+          </div>
+        </div>
+        <div class="result-detail" id="dur-detail">—</div>
+        <div class="confidence-bar"><div class="confidence-fill" id="dur-conf" style="background:#378ADD"></div></div>
+      </div>
+
+      <div class="result-block" id="block3">
+        <div class="result-header">
+          <div>
+            <div class="result-model">Model 3 — Rush Hour Prediction</div>
+            <div class="result-algo">Logistic Regression · 59.43% accuracy · AUC 0.5521</div>
+          </div>
+          <div>
+            <div class="result-value" id="rush-val">—</div>
+            <div class="result-label" id="rush-lbl">Rush Hour</div>
+          </div>
+        </div>
+        <div class="result-detail" id="rush-detail">—</div>
+        <div class="confidence-bar"><div class="confidence-fill" id="rush-conf"></div></div>
+      </div>
+
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;border:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Input Summary</div>
+        <div id="summary" style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.8"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div class="section-title" style="margin-bottom:0"><div class="live-dot"></div>Prediction History</div>
+    <button onclick="clearHistory()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text3);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace">Clear</button>
+  </div>
+  <table class="history-table">
+    <thead>
+      <tr>
+        <th>#</th><th>State</th><th>Hour</th><th>Weather</th>
+        <th>Temp</th><th>Severity</th><th>Duration</th><th>Rush Hour</th>
+      </tr>
+    </thead>
+    <tbody id="history-body">
+      <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px;font-family:'DM Mono',monospace">No predictions yet</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const features={junction:0,crossing:0,traffic_signal:1,stop:0,amenity:0,roundabout:0,bump:0,railway:0};
+let predCount=0;
+let history=[];
+const cities={
+  CA:['Los Angeles','San Francisco','San Diego','Sacramento','San Jose'],
+  FL:['Miami','Orlando','Tampa','Jacksonville','Fort Lauderdale'],
+  TX:['Houston','Dallas','Austin','San Antonio','Fort Worth'],
+  NY:['New York','Buffalo','Rochester','Albany','Syracuse'],
+  NC:['Charlotte','Raleigh','Greensboro','Durham','Winston-Salem'],
+  PA:['Philadelphia','Pittsburgh','Allentown','Erie','Reading'],
+  VA:['Richmond','Virginia Beach','Norfolk','Arlington','Alexandria'],
+  MN:['Minneapolis','Saint Paul','Rochester','Duluth','Bloomington'],
+  GA:['Atlanta','Augusta','Columbus','Macon','Savannah'],
+  IL:['Chicago','Aurora','Rockford','Joliet','Naperville'],
+  OH:['Columbus','Cleveland','Cincinnati','Toledo','Akron'],
+  SC:['Columbia','Charleston','Greenville','Spartanburg','Rock Hill'],
+};
+
+function updateCities(){
+  const s=document.getElementById('state').value;
+  const c=document.getElementById('city');
+  c.innerHTML='';
+  (cities[s]||[]).forEach(city=>{
+    const o=document.createElement('option');
+    o.value=city;o.textContent=city;c.appendChild(o);
+  });
+}
+
+function toggle(name,btn){
+  features[name]=features[name]?0:1;
+  btn.classList.toggle('on');
+}
+
+async function predict(){
+  const btn=document.getElementById('predict-btn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Predicting...';
+
+  const payload={
+    hour:document.getElementById('hour').value,
+    dow:document.getElementById('dow').value,
+    month:document.getElementById('month').value,
+    state:document.getElementById('state').value,
+    city:document.getElementById('city').value,
+    weather:document.getElementById('weather').value,
+    sunrise:document.getElementById('sunrise').value,
+    temp:document.getElementById('temp').value,
+    humidity:document.getElementById('humidity').value,
+    visibility:document.getElementById('visibility').value,
+    wind_speed:document.getElementById('wind_speed').value,
+    pressure:document.getElementById('pressure').value,
+    distance:document.getElementById('distance').value,
+    ...features
+  };
+
+  try{
+    const res=await fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await res.json();
+
+    document.getElementById('waiting').style.display='none';
+    document.getElementById('results').style.display='block';
+
+    const sevColors={1:'#1D9E75',2:'#EF9F27',3:'#e85a2a',4:'#a32d2d'};
+
+    setTimeout(()=>{
+      document.getElementById('sev-val').textContent='Level '+d.severity;
+      document.getElementById('sev-val').style.color=d.sev_color;
+      document.getElementById('sev-lbl').textContent=d.sev_name+' Accident';
+      document.getElementById('sev-detail').textContent=d.sev_detail;
+      document.getElementById('sev-conf').style.width=d.sev_conf+'%';
+      document.getElementById('sev-conf').style.background=d.sev_color;
+      for(let i=1;i<=4;i++){
+        const seg=document.getElementById('seg'+i);
+        seg.style.background=i<=d.severity?sevColors[i]:'var(--border)';
+      }
+      document.getElementById('block1').classList.add('active');
+    },200);
+
+    setTimeout(()=>{
+      document.getElementById('dur-val').textContent=d.duration;
+      document.getElementById('dur-detail').textContent=d.dur_detail;
+      document.getElementById('dur-conf').style.width=d.dur_conf+'%';
+      document.getElementById('block2').classList.add('active');
+    },600);
+
+    setTimeout(()=>{
+      document.getElementById('rush-val').textContent=d.is_rush_hour?'YES':'NO';
+      document.getElementById('rush-val').style.color=d.is_rush_hour?'#e85a2a':'#1D9E75';
+      document.getElementById('rush-lbl').textContent=d.is_rush_hour?'Rush Hour Detected':'Not Rush Hour';
+      document.getElementById('rush-detail').textContent=d.rush_detail;
+      document.getElementById('rush-conf').style.width=d.rush_conf+'%';
+      document.getElementById('rush-conf').style.background=d.is_rush_hour?'#e85a2a':'#1D9E75';
+      document.getElementById('block3').classList.add('active');
+    },1000);
+
+    setTimeout(()=>{
+      const state=document.getElementById('state').value;
+      const weather=document.getElementById('weather').value;
+      const hour=document.getElementById('hour').value;
+      const temp=document.getElementById('temp').value;
+      document.getElementById('summary').innerHTML=
+        `State: ${state} · Hour: ${hour}:00 · Weather: ${weather}<br>`+
+        `Temp: ${temp}°F · Humidity: ${document.getElementById('humidity').value}% · Visibility: ${document.getElementById('visibility').value}mi<br>`+
+        `Road features: ${Object.entries(features).filter(([k,v])=>v).map(([k])=>k).join(', ')||'None'}`;
+
+      predCount++;
+      history.unshift({id:predCount,state,hour,weather,temp,severity:d.severity,sev_name:d.sev_name,duration:d.duration,is_rush:d.is_rush_hour});
+      if(history.length>10)history.pop();
+      renderHistory();
+    },1200);
+
+  }catch(e){
+    alert('Error: '+e.message);
+  }
+
+  btn.disabled=false;
+  btn.innerHTML='⚡ Run All 3 Predictions';
+}
+
+function renderHistory(){
+  const tbody=document.getElementById('history-body');
+  if(!history.length){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px;font-family:DM Mono,monospace">No predictions yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML=history.map(h=>`
+    <tr>
+      <td style="color:var(--text3)">#${h.id}</td>
+      <td>${h.state}</td><td>${h.hour}:00</td><td>${h.weather}</td><td>${h.temp}°F</td>
+      <td><span class="sev-badge sev-${h.severity}">Level ${h.severity} · ${h.sev_name}</span></td>
+      <td>${h.duration} min</td>
+      <td><span class="sev-badge ${h.is_rush?'rush-yes':'rush-no'}">${h.is_rush?'YES':'NO'}</span></td>
+    </tr>`).join('');
+}
+
+function clearHistory(){history=[];predCount=0;renderHistory();}
+updateCities();
+</script>
+</body>
+</html>
