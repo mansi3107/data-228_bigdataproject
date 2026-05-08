@@ -48,6 +48,9 @@ with DAG(
         bash_command='hdfs dfs -ls /user/accidents/ml_ready/ && echo "ML ready data verified on HDFS"',
     )
 
-    #make sure the pipeline finishes and runs everything correctly 
+   pipeline_complete = BashOperator(
+        task_id='pipeline_complete',
+        bash_command='echo "US Accidents Pipeline Complete! All stages verified."',
+    )
 
     check_hdfs >> check_spark >> data_ingestion >> spark_cleaning >> spark_eda >> ml_models >> pipeline_complete
