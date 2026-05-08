@@ -1,6 +1,6 @@
 # US Accidents Big Data Analysis
 
-**CMPE / DATA 228 — Big Data Technologies**
+**DATA 228 — Big Data Technologies**
 San José State University · Spring 2026
 
 ## Team
