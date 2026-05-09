@@ -6,10 +6,10 @@ San José State University · Spring 2026
 ## Team
 | Name | Role |
 |------|------|
-| Mansi Deshmukh | Data Pipeline & EDA |
-| Md. Faiq Salman | ML Models & Evaluation |
-| Sanjay Bharvad | Infrastructure & Airflow |
-| Sharan Patil | Dashboards & Demo |
+| Mansi Deshmukh | EDA and Dashboard building |
+| Md. Faiq Salman | ML Models & improvements |
+| Sanjay Bharvad | Data cleaning and demo building |
+| Sharan Patil | Data gathering and HDFS storage |
 
 ---
 
